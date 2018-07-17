@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "DEBUG=proj:* node ./bin/www",
+    "start": "DEBUG=exp-proj:* node ./bin/www",
     "eslint": "eslint .",
     "fix": "eslint --fix ."
   },
