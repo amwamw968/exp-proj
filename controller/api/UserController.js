@@ -95,62 +95,81 @@ class UserController {
      * @param res
      * @param next
      */
-  /*userLogin(req, res, next) {
-        let name = req.query.name;
-        let password = req.query.password;
-        userInfo
-            .findOne({name: name}, _filter)
-            .populate('likebooks')
-            .exec((err, data) => {
-                if (err) {
-                    console.log(err);
-                    return;
-                }
-                if (data == null) {
-                    console.log('此用户没有注册');
-                    res.json({
-                        code: constant.RESULT_CODE.NO_DATA.code,
-                        msg: '此用户没有注册',
-                    });
-                    return;
-                }
-                console.log('password==' + password);
-                //登录时先把前端传过来的密码进行md5
-                let encrypt = crypto.createHash('md5').update(password).digest('hex');
-                //然后对已经md5的密码带上WeYue字符串再次加密和数据库里面存入的密码对比
-                let pass = crypto.createHash('md5').update(encrypt + 'WeYue').digest('hex');
+  async userLogin(req, res, next) {
+      console.log('[userLogin]');
+      let name = req.query.name;
+      let password = req.query.password;
 
-                console.log('password==' + data.password + '==password==' + pass);
-                if (data.password == pass) {
-                    let token = jwt.sign({name: name}, 'wyjwtsecret', {
-                        expiresIn: "30d" // 一个月过期
-                    });
-                    console.log("tokenlogin==" + token);
-                    userInfo.update({name: name}, {token: token}, (err, result) => {
-                        if (err) {
-                            console.log(err);
-                        } else {
-                            console.log('更新token成功');
-                        }
-                    });
+      console.log('name: ' + name);
+      console.log('password: ' + password);
+      if ((typeof(name) === 'undefined') || (typeof(password) === 'undefined'))
+      {
+          console.log('arg error: undefined');
+          //var err = new Error('Not Found');
+          //err.status = 404;
+          //next(err);
+          res.json({
+              code: constant.RESULT_CODE.ARG_ERROR.code,
+              msg: constant.RESULT_CODE.ARG_ERROR.msg,
+              data: 'Bad Request'
+          });
+          res.status(400);
+          return;
+          //return next(createError(404));
+      }
 
-                    //把最新的token存入数据库
-                    data.token = token;
+      let findUser = await userInfo.findOne({name: name}, _filter) //.populate('likebooks')
+          .catch((err)=>{
+              console.log('find error:' + err);
+          })
 
-                    res.json({
-                        code: constant.RESULT_CODE.SUCCESS.code,
-                        msg: constant.RESULT_CODE.SUCCESS.msg,
-                        data: data
-                    });
-                } else {
-                    res.json({
-                        code: constant.RESULT_CODE.ARG_ERROR.code,
-                        msg: '密码错误',
-                    });
-                }
-            });
+      if (!findUser){
+          console.log('此用户没有注册');
+          res.json({
+              code: constant.RESULT_CODE.NO_DATA.code,
+              msg: '此用户没有注册',
+          });
+          return;
+      }
+      //console.log(findUser);
+      console.log('password==' + password);
+      //登录时先把前端传过来的密码进行md5
+      //let encrypt = await crypto.createHash('md5').update(password).digest('hex');
+      //然后对已经md5的密码带上WeYue字符串再次加密和数据库里面存入的密码对比
+      let pass = await crypto.createHash('md5').update(password + 'AMW').digest('hex');
 
-    }*/
+      console.log('password==' + findUser.password + '==password==' + pass);
+      if (findUser.password == pass)
+      {
+          let token = await jwt.sign({name: name}, config.jwtsecret, {
+              expiresIn: "30d" // 一个月过期
+          });
+          console.log("tokenlogin==" + token);
+          let updateUser = await userInfo.update({name: name}, {token: token})
+              .catch((err)=>{
+                  console.log('update user err: ' + err);
+              })
+
+          console.log('更新token成功');
+
+          //把最新的token存入数据库
+          findUser.token = token;
+
+          res.json({
+              code: constant.RESULT_CODE.SUCCESS.code,
+              msg: constant.RESULT_CODE.SUCCESS.msg,
+              data: findUser
+          });
+      }
+      else
+      {
+          res.json({
+              code: constant.RESULT_CODE.ARG_ERROR.code,
+              msg: '密码错误',
+          });
+          res.status(401);
+      }
+  }
 
   /**
      * 获取用户信息
@@ -158,25 +177,35 @@ class UserController {
      * @param res
      * @param next
      */
-  /* getUserInfo(req, res, next) {
-        let name = req.decoded.name;
-        userInfo.findOne({name: name}, _filter).populate('likebooks').exec((err, data) => {
-            if (err) {
-                console.log(err);
-                res.json({
-                    code: constant.RESULT_CODE.NO_DATA.code,
-                    msg: '获取用户信息失败',
-                })
-                return;
-            }
+  async getUserInfo(req, res, next) {
+      console.log('[getUserInfo]');
+      let name = req.decoded.name;
 
-            res.json({
-                code: constant.RESULT_CODE.SUCCESS.code,
-                msg: constant.RESULT_CODE.SUCCESS.msg,
-                data: data
-            })
-        })
-    }*/
+      let findUser = await userInfo.findOne({name: name}, _filter)
+          .catch((err)=>{
+              console.log(err);
+              res.json({
+                  code: constant.RESULT_CODE.NO_DATA.code,
+                  msg: '获取用户信息失败',
+              })
+          })
+
+      if (!findUser)
+      {
+          res.json({
+              code: constant.RESULT_CODE.NO_DATA.code,
+              msg: '获取用户信息失败',
+          })
+          res.status(400);
+          return;
+      }
+
+      res.json({
+          code: constant.RESULT_CODE.SUCCESS.code,
+          msg: constant.RESULT_CODE.SUCCESS.msg,
+          data: findUser
+      })
+  }
 
 
   /**
