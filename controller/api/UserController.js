@@ -3,7 +3,8 @@ const constant = require('../../utils/constant');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken'); // 使用jwt签名
 const config = require('../../dbhelper/config');
-
+const formidable = require('formidable');
+const fs = require('fs');
 
 const _filter = {
   __v: 0,
@@ -96,79 +97,80 @@ class UserController {
      * @param next
      */
   async userLogin(req, res, next) {
-      console.log('[userLogin]');
-      let name = req.query.name;
-      let password = req.query.password;
+    console.log('[userLogin]');
+    let name = req.query.name;
+    let password = req.query.password;
 
-      console.log('name: ' + name);
-      console.log('password: ' + password);
-      if ((typeof(name) === 'undefined') || (typeof(password) === 'undefined'))
-      {
-          console.log('arg error: undefined');
-          //var err = new Error('Not Found');
-          //err.status = 404;
-          //next(err);
-          res.json({
-              code: constant.RESULT_CODE.ARG_ERROR.code,
-              msg: constant.RESULT_CODE.ARG_ERROR.msg,
-              data: 'Bad Request'
-          });
-          res.status(400);
-          return;
-          //return next(createError(404));
-      }
+    console.log('name: ' + name);
+    console.log('password: ' + password);
+    if ((typeof(name) === 'undefined') || (typeof(password) === 'undefined'))
+    {
+      console.log('arg error: undefined');
+      //var err = new Error('Not Found');
+      //err.status = 404;
+      //next(err);
+      res.json({
+        code: constant.RESULT_CODE.ARG_ERROR.code,
+        msg: constant.RESULT_CODE.ARG_ERROR.msg,
+        data: 'Bad Request'
+      });
+      res.status(400);
+      return;
+      //return next(createError(404));
+    }
 
-      let findUser = await userInfo.findOne({name: name}, _filter) //.populate('likebooks')
-          .catch((err)=>{
-              console.log('find error:' + err);
-          })
+    let findUser = await userInfo.findOne({name: name}, _filter) 
+      .populate('likebooks')
+      .catch((err)=>{
+        console.log('find error:' + err);
+      });
 
-      if (!findUser){
-          console.log('此用户没有注册');
-          res.json({
-              code: constant.RESULT_CODE.NO_DATA.code,
-              msg: '此用户没有注册',
-          });
-          return;
-      }
-      //console.log(findUser);
-      console.log('password==' + password);
-      //登录时先把前端传过来的密码进行md5
-      //let encrypt = await crypto.createHash('md5').update(password).digest('hex');
-      //然后对已经md5的密码带上WeYue字符串再次加密和数据库里面存入的密码对比
-      let pass = await crypto.createHash('md5').update(password + 'AMW').digest('hex');
+    if (!findUser){
+      console.log('此用户没有注册');
+      res.json({
+        code: constant.RESULT_CODE.NO_DATA.code,
+        msg: '此用户没有注册',
+      });
+      return;
+    }
+    //console.log(findUser);
+    console.log('password==' + password);
+    //登录时先把前端传过来的密码进行md5
+    //let encrypt = await crypto.createHash('md5').update(password).digest('hex');
+    //然后对已经md5的密码带上WeYue字符串再次加密和数据库里面存入的密码对比
+    let pass = await crypto.createHash('md5').update(password + 'AMW').digest('hex');
 
-      console.log('password==' + findUser.password + '==password==' + pass);
-      if (findUser.password == pass)
-      {
-          let token = await jwt.sign({name: name}, config.jwtsecret, {
-              expiresIn: "30d" // 一个月过期
-          });
-          console.log("tokenlogin==" + token);
-          let updateUser = await userInfo.update({name: name}, {token: token})
-              .catch((err)=>{
-                  console.log('update user err: ' + err);
-              })
+    console.log('password==' + findUser.password + '==password==' + pass);
+    if (findUser.password == pass)
+    {
+      let token = await jwt.sign({name: name}, config.jwtsecret, {
+        expiresIn: '30d' // 一个月过期
+      });
+      console.log('tokenlogin==' + token);
+      let updateUser = await userInfo.update({name: name}, {token: token})
+        .catch((err)=>{
+          console.log('update user err: ' + err);
+        });
 
-          console.log('更新token成功');
+      console.log('更新token成功');
 
-          //把最新的token存入数据库
-          findUser.token = token;
+      //把最新的token存入数据库
+      findUser.token = token;
 
-          res.json({
-              code: constant.RESULT_CODE.SUCCESS.code,
-              msg: constant.RESULT_CODE.SUCCESS.msg,
-              data: findUser
-          });
-      }
-      else
-      {
-          res.json({
-              code: constant.RESULT_CODE.ARG_ERROR.code,
-              msg: '密码错误',
-          });
-          res.status(401);
-      }
+      res.json({
+        code: constant.RESULT_CODE.SUCCESS.code,
+        msg: constant.RESULT_CODE.SUCCESS.msg,
+        data: findUser
+      });
+    }
+    else
+    {
+      res.json({
+        code: constant.RESULT_CODE.ARG_ERROR.code,
+        msg: '密码错误',
+      });
+      res.status(401);
+    }
   }
 
   /**
@@ -178,33 +180,34 @@ class UserController {
      * @param next
      */
   async getUserInfo(req, res, next) {
-      console.log('[getUserInfo]');
-      let name = req.decoded.name;
+    console.log('[getUserInfo]');
+    let name = req.decoded.name;
+    console.log(req.decoded);
+    let findUser = await userInfo.findOne({name: name}, _filter)
+      .populate('likebooks')
+      .catch((err)=>{
+        console.log(err);
+        res.json({
+          code: constant.RESULT_CODE.NO_DATA.code,
+          msg: '获取用户信息失败',
+        });
+      });
 
-      let findUser = await userInfo.findOne({name: name}, _filter)
-          .catch((err)=>{
-              console.log(err);
-              res.json({
-                  code: constant.RESULT_CODE.NO_DATA.code,
-                  msg: '获取用户信息失败',
-              })
-          })
-
-      if (!findUser)
-      {
-          res.json({
-              code: constant.RESULT_CODE.NO_DATA.code,
-              msg: '获取用户信息失败',
-          })
-          res.status(400);
-          return;
-      }
-
+    if (!findUser)
+    {
       res.json({
-          code: constant.RESULT_CODE.SUCCESS.code,
-          msg: constant.RESULT_CODE.SUCCESS.msg,
-          data: findUser
-      })
+        code: constant.RESULT_CODE.NO_DATA.code,
+        msg: '获取用户信息失败',
+      });
+      res.status(400);
+      return;
+    }
+
+    res.json({
+      code: constant.RESULT_CODE.SUCCESS.code,
+      msg: constant.RESULT_CODE.SUCCESS.msg,
+      data: findUser
+    });
   }
 
 
@@ -214,85 +217,87 @@ class UserController {
      * @param res
      * @param next
      */
-  /*userUploadAvatar(req, res, next) {
-        let name = req.decoded.name;
-        // let name = req.query.name;
-        if (!name) {
-            console.log('上传头像name不能为空');
-            res.json({
-                code: constant.RESULT_CODE.UPLOAD_ERR.code,
-                msg: '上传头像失败',
-            })
-            return;
+  userUploadAvatar(req, res, next) {
+    console.log('[userUploadAvatar]');
+    let name = req.decoded.name;
+    console.log(name);
+    // let name = req.query.name;
+    if (!name) {
+      console.log('上传头像name不能为空');
+      res.json({
+        code: constant.RESULT_CODE.UPLOAD_ERR.code,
+        msg: '上传头像失败',
+      });
+      return;
+    }
+
+    let form = new formidable.IncomingForm();//创建上传表单
+    form.encoding = 'utf-8'; //设置编辑
+    form.uploadDir = './public/images/avatar/';//设置上传目录
+    form.keepExtensions = true;//保留后缀
+    form.maxFieldsSize = 2 * 1024 * 1024;//文件大小
+
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        res.json({
+          code: constant.RESULT_CODE.UPLOAD_ERR.code,
+          msg: '上传头像失败',
+        });
+        return;
+      }
+      console.log(files);
+      let extName = 'jpg';//后缀名
+      switch (files.avatar.type) {
+      case 'image/pjpeg':
+        extName = 'jpg';
+        break;
+      case 'image/jpeg':
+        extName = 'jpg';
+        break;
+      case 'image/png':
+        extName = 'png';
+        break;
+      case 'image/x-png':
+        extName = 'png';
+        break;
+      }
+
+      if (extName.length == 0) {
+        res.json({
+          code: constant.RESULT_CODE.UPLOAD_ERR.code,
+          msg: '只支持png和jpg格式图片',
+        });
+      }
+
+      let avatarName = 'WeYue' + name + '.' + extName;
+      //图片写入地址
+      let newPath = form.uploadDir + avatarName;
+      //显示地址
+      let showUrl = '/images/avatar/' + avatarName;
+      console.log('newPath', newPath);
+      fs.renameSync(files.avatar.path, newPath);
+
+      userInfo.update({name: name}, {icon: showUrl}, (err, result) => {
+        if (err) {
+          console.log(err);
+          res.json({
+            code: constant.RESULT_CODE.UPLOAD_ERR.code,
+            msg: constant.RESULT_CODE.UPLOAD_ERR.msg,
+          });
+        } else {
+          console.log('更新头像成功');
+          res.json({
+            code: constant.RESULT_CODE.SUCCESS.code,
+            msg: constant.RESULT_CODE.SUCCESS.msg,
+            data: showUrl
+          });
         }
-
-        let form = new formidable.IncomingForm();//创建上传表单
-        form.encoding = 'utf-8'; //设置编辑
-        form.uploadDir = '../public/images/avatar/';//设置上传目录
-        form.keepExtensions = true;//保留后缀
-        form.maxFieldsSize = 2 * 1024 * 1024;//文件大小
-
-        form.parse(req, (err, fields, files) => {
-            if (err) {
-                res.json({
-                    code: constant.RESULT_CODE.UPLOAD_ERR.code,
-                    msg: '上传头像失败',
-                });
-                return;
-            }
-            console.log(files);
-            let extName = 'jpg';//后缀名
-            switch (files.avatar.type) {
-                case 'image/pjpeg':
-                    extName = 'jpg';
-                    break;
-                case 'image/jpeg':
-                    extName = 'jpg';
-                    break;
-                case 'image/png':
-                    extName = 'png';
-                    break;
-                case 'image/x-png':
-                    extName = 'png';
-                    break;
-            }
-
-            if (extName.length == 0) {
-                res.json({
-                    code: constant.RESULT_CODE.UPLOAD_ERR.code,
-                    msg: '只支持png和jpg格式图片',
-                });
-            }
-
-            let avatarName = "WeYue" + name + '.' + extName;
-            //图片写入地址
-            let newPath = form.uploadDir + avatarName;
-            //显示地址
-            let showUrl = '/images/avatar/' + avatarName;
-            console.log('newPath', newPath);
-            fs.renameSync(files.avatar.path, newPath);
-
-            userInfo.update({name: name}, {icon: showUrl}, (err, result) => {
-                if (err) {
-                    console.log(err);
-                    res.json({
-                        code: constant.RESULT_CODE.UPLOAD_ERR.code,
-                        msg: constant.RESULT_CODE.UPLOAD_ERR.msg,
-                    })
-                } else {
-                    console.log('更新头像成功');
-                    res.json({
-                        code: constant.RESULT_CODE.SUCCESS.code,
-                        msg: constant.RESULT_CODE.SUCCESS.msg,
-                        data: showUrl
-                    })
-                }
-            });
+      });
 
 
-        })
+    });
 
-    }*/
+  }
 
   /**
      * 修改用户密码

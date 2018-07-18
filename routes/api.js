@@ -13,7 +13,7 @@ router.use(headers.token);
 
 
 router.get('/user/userinfo', userController.getUserInfo);
-
+router.post('/user/uploadavatar', userController.userUploadAvatar);
 
 
 module.exports = router;
