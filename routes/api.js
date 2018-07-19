@@ -4,7 +4,7 @@ const userController = require('../controller/api/UserController');
 const uploadController = require('../controller/api/UploadController');
 const headers = require('../utils/headers');
 
-const multer  = require('multer')
+const multer  = require('multer');
 const upload = multer({ dest: './tmp/' });
 
 
