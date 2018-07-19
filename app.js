@@ -10,6 +10,7 @@ var usersRouter = require('./routes/users');
 var dopostRouter = require('./routes/dopost');
 var app = express();
 const api = require('./routes/api');
+var myossRouter = require('./routes/myoss');
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -25,6 +26,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/dopost', dopostRouter);
+app.use('/myoss', myossRouter);
 app.use('/users', usersRouter);
 app.use('/api', api);
 app.use(favicon(path.join(__dirname, 'public', 'images','favicon.ico')));
