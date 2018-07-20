@@ -12,6 +12,8 @@ console.log('enter route api');
 
 router.post('/uploadsingle', upload.single('file'), uploadController.uploadSingleFile);
 
+router.post('/uploadMultipart', upload.single('file'), uploadController.uploadMultipart);
+
 router.use(headers.apptype);
 
 /*user模块*/
