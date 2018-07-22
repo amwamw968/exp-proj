@@ -136,9 +136,9 @@ class UploadController {
   
     /* 阿里云 上传文件 */
     //let result = await store.put(destFile, localFile)
-    let result = await store.multipartUpload(destFile, localFile, {
+    let result =  store.multipartUpload(destFile, localFile, {
       parallel: 4,
-      partSize: 10 * 1024 * 1024,
+      partSize: 2 * 1024 * 1024,
       progress: asyncProcess
 
     })

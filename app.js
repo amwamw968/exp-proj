@@ -12,6 +12,7 @@ var app = express();
 const api = require('./routes/api');
 var myossRouter = require('./routes/myoss');
 
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -28,6 +29,34 @@ app.use('/', indexRouter);
 app.use('/dopost', dopostRouter);
 app.use('/myoss', myossRouter);
 app.use('/users', usersRouter);
+app.get('/style.css',function(req,res){
+  res.sendFile(__dirname+'/views/style.css');
+});
+
+app.get('/lib/crypto1/crypto/crypto.js',function(req,res){
+  res.sendFile(__dirname+'/views/lib/crypto1/crypto/crypto.js');
+});
+
+app.get('/lib/base64.js',function(req,res){
+  res.sendFile(__dirname+'/views/lib/base64.js');
+});
+
+app.get('/lib/crypto1/hmac/hmac.js',function(req,res){
+  res.sendFile(__dirname+'/views/lib/crypto1/hmac/hmac.js');
+});
+
+app.get('/lib/crypto1/sha1/sha1.js',function(req,res){
+  res.sendFile(__dirname+'/views/lib/crypto1/sha1/sha1.js');
+});
+app.get('/lib/plupload-2.1.2/js/plupload.full.min.js',function(req,res){
+  res.sendFile(__dirname+'/views/lib/plupload-2.1.2/js/plupload.full.min.js');
+});
+app.get('/lib/crypto1/hmac/hmac.js',function(req,res){
+  res.sendFile(__dirname+'/views/lib/crypto1/hmac/hmac.js');
+});
+app.get('/upload.js',function(req,res){
+  res.sendFile(__dirname+'/views/upload.js');
+});
 app.use('/api', api);
 app.use(favicon(path.join(__dirname, 'public', 'images','favicon.ico')));
 
