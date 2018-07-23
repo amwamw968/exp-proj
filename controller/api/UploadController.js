@@ -26,7 +26,7 @@ class UploadController {
     accesskey.endPoint = {};
     accesskey.bucket = {};
 
-    let filename = '/root/download/key';
+    let filename = './key';
     if (!fs.existsSync(filename)){
       console.log('[uploadSingleFile]: key文件不存在');
 
