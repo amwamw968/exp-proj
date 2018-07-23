@@ -80,7 +80,8 @@ function send_request()
 
     if (xmlhttp!=null)
     {
-        serverUrl = 'http://localhost/php/get.php';
+        //serverUrl = 'http://localhost/php/get.php';
+        serverUrl = 'http://www.yichenhuang.com:1001/get.php';
         xmlhttp.open( "GET", serverUrl, false );
         xmlhttp.send( null );
         console.log("xmlhttp.responseText = ", xmlhttp.responseText);
@@ -184,7 +185,6 @@ function set_upload_param(up, filename, ret)
         'policy': policyBase64,
         'OSSAccessKeyId': accessid,
         'success_action_status' : '200', //让服务端返回200,不然，默认会返回204,
-        'callback' : callbackbody,
         'signature': signature,
     };
 
